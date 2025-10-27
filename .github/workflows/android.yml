@@ -6,17 +6,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: read  # 只保留读取代码的权限（无需 Pages 权限）
 
 jobs:
   build:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # 去掉 environment 配置（不需要关联 Pages 环境）
 
     steps:
     - uses: actions/checkout@v4
@@ -36,9 +30,10 @@ jobs:
         echo 'org.gradle.parallel=true' >> gradle.properties
         echo 'org.gradle.vfs.watch=true' >> gradle.properties
         echo 'org.gradle.jvmargs=-Xmx2048m' >> gradle.properties
-        ./gradlew publishToMavenLocal
+        ./gradlew publishToMavenLocal  # 生成 AAR/JAR 并发布到本地 Maven
         ./gradlew --stop
       env:
+        # 签名配置（不需要可注释）
         ORG_GRADLE_PROJECT_signingKey: ${{ secrets.maven_pgp_signingKey }}
         ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.maven_pgp_signingPassword }}
     - name: Upload library
@@ -48,12 +43,11 @@ jobs:
         path: ~/.m2/repository/
         include-hidden-files: true
         if-no-files-found: error
-    - name: Upload pages
-      uses: actions/upload-pages-artifact@v3
-      with:
-        # Upload entire repository
-        path: 'api/build/intermediates/java_doc_dir/release/javaDocReleaseGeneration'
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
-
+    # 删除以下两行 Pages 相关步骤
+    # - name: Upload pages
+    #   uses: actions/upload-pages-artifact@v3
+    #   with:
+    #     path: 'api/build/intermediates/java_doc_dir/release/javaDocReleaseGeneration'
+    # - name: Deploy to GitHub Pages
+    #   id: deployment
+    #   uses: actions/deploy-pages@v4
